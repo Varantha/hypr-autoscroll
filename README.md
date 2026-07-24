@@ -100,6 +100,32 @@ block in `~/.config/hypr/bindings.lua`. Keep customizations under
 `~/.config/hypr/`; files under `~/.local/share/omarchy/` are managed by
 Omarchy.
 
+## Uninstall
+
+First remove the `hypr_autoscroll` configuration and `SUPER + A` binding that
+you added during setup.
+
+If installed with `hyprpm`:
+
+```bash
+hyprpm disable hypr-autoscroll
+hyprpm remove hypr-autoscroll
+hyprpm reload
+```
+
+Keep your startup `hyprpm reload` command if you use other Hyprland plugins.
+
+If loaded from a manual build, also remove its `hl.plugin.load(...)` or legacy
+`plugin = ...` line. Unload the running plugin using the same absolute path
+that was used to load it:
+
+```bash
+hyprctl plugin unload /absolute/path/to/build/hypr-autoscroll.so
+```
+
+Run `make clean` inside the cloned repository to remove the compiled plugin.
+The source directory can then be deleted if it is no longer needed.
+
 ## Configuration
 
 ```lua
