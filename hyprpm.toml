@@ -1,0 +1,11 @@
+[repository]
+name = "hypr-autoscroll"
+authors = ["hypr-autoscroll contributors"]
+
+[hypr-autoscroll]
+description = "Windows-style middle-click autoscrolling for Hyprland"
+authors = ["hypr-autoscroll contributors"]
+output = "build/hypr-autoscroll.so"
+build = [
+    "make clean all",
+]
