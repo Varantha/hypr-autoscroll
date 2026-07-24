@@ -77,7 +77,7 @@ backup_file() {
 }
 
 remove_require_line() {
-    grep -Fxq "$REQUIRE_LINE" "$MAIN_CONFIG" || return
+    grep -Fxq "$REQUIRE_LINE" "$MAIN_CONFIG" || return 0
 
     backup_file "$MAIN_CONFIG"
     temporary_file="$(mktemp)"

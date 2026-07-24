@@ -132,4 +132,6 @@ run_setup --uninstall
     fail "module require was not removed"
 [[ ! -e "$MOCK_STATE/installed" ]] || fail "hyprpm repository was not removed"
 
+run_setup --uninstall
+
 printf 'Omarchy setup tests passed\n'
