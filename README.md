@@ -229,9 +229,9 @@ hl.config({
       direct_activation = false,
       button = 274,
       dead_zone = 12.0,
-      sensitivity = 8.0,
-      acceleration = 1.15,
-      max_speed = 3000.0,
+      sensitivity = 4.0,
+      acceleration = 1.075,
+      max_speed = 1500.0,
       horizontal = true,
       vertical = true,
       frame_interval_ms = 16,
@@ -246,9 +246,9 @@ hl.config({
 | `direct_activation` | `true` | Starts with middle-button autoscroll mode enabled |
 | `button` | `274` | Linux input button code; `274` is `BTN_MIDDLE` |
 | `dead_zone` | `12.0` | Pointer distance before scrolling starts |
-| `sensitivity` | `8.0` | Scroll velocity multiplier |
-| `acceleration` | `1.15` | Speed curve exponent |
-| `max_speed` | `3000.0` | Maximum scroll velocity |
+| `sensitivity` | `4.0` | Scroll velocity multiplier |
+| `acceleration` | `1.075` | Speed curve exponent; `1.0` is linear |
+| `max_speed` | `1500.0` | Maximum scroll velocity |
 | `horizontal` | `true` | Enables horizontal scrolling |
 | `vertical` | `true` | Enables vertical scrolling |
 | `frame_interval_ms` | `16` | Delay between generated scroll frames |
@@ -260,7 +260,7 @@ plugin {
     hypr_autoscroll {
         enabled = true
         direct_activation = false
-        sensitivity = 8
+        sensitivity = 4
     }
 }
 

@@ -324,16 +324,20 @@ namespace {
             "plugin:hypr_autoscroll:button", "Linux input button code used to activate autoscroll", BTN_MIDDLE,
             Config::Values::SIntValueOptions{.min = BTN_LEFT, .max = 0x2ff});
         config.deadZone = makeShared<Config::Values::CFloatValue>(
-            "plugin:hypr_autoscroll:dead_zone", "Pointer distance that produces no scrolling", 12.0F,
+            "plugin:hypr_autoscroll:dead_zone", "Pointer distance that produces no scrolling",
+            static_cast<float>(Autoscroll::DEFAULT_DEAD_ZONE),
             Config::Values::SFloatValueOptions{.min = 0.0F, .max = 200.0F});
         config.sensitivity = makeShared<Config::Values::CFloatValue>(
-            "plugin:hypr_autoscroll:sensitivity", "Autoscroll velocity multiplier", 8.0F,
+            "plugin:hypr_autoscroll:sensitivity", "Autoscroll velocity multiplier",
+            static_cast<float>(Autoscroll::DEFAULT_SENSITIVITY),
             Config::Values::SFloatValueOptions{.min = 0.1F, .max = 100.0F});
         config.acceleration = makeShared<Config::Values::CFloatValue>(
-            "plugin:hypr_autoscroll:acceleration", "Exponent applied to distance outside the dead zone", 1.15F,
+            "plugin:hypr_autoscroll:acceleration", "Exponent applied to distance outside the dead zone",
+            static_cast<float>(Autoscroll::DEFAULT_ACCELERATION),
             Config::Values::SFloatValueOptions{.min = 0.5F, .max = 3.0F});
         config.maxSpeed = makeShared<Config::Values::CFloatValue>(
-            "plugin:hypr_autoscroll:max_speed", "Maximum scroll velocity in axis units per second", 3000.0F,
+            "plugin:hypr_autoscroll:max_speed", "Maximum scroll velocity in axis units per second",
+            static_cast<float>(Autoscroll::DEFAULT_MAX_SPEED),
             Config::Values::SFloatValueOptions{.min = 1.0F, .max = 20000.0F});
         config.horizontal      = makeShared<Config::Values::CBoolValue>("plugin:hypr_autoscroll:horizontal",
                                                                         "Enable horizontal autoscrolling", true);
@@ -474,7 +478,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     registerListeners();
     HyprlandAPI::reloadConfig();
 
-    return {PLUGIN_NAME, "Windows-style middle-click autoscrolling", "hypr-autoscroll contributors", "0.1.0"};
+    return {PLUGIN_NAME, "Windows-style middle-click autoscrolling", "hypr-autoscroll contributors", "0.1.1"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {

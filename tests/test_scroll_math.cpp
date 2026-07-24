@@ -13,6 +13,11 @@ namespace {
 } // namespace
 
 int main() {
+    const Autoscroll::ScrollCurve defaults;
+    assert(near(defaults.sensitivity, 4.0));
+    assert(near(defaults.acceleration, 1.075));
+    assert(near(defaults.maxSpeed, 1500.0));
+
     const Autoscroll::ScrollCurve linear{
         .deadZone     = 10.0,
         .sensitivity  = 2.0,

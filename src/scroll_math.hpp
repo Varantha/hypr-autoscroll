@@ -5,11 +5,16 @@
 
 namespace Autoscroll {
 
+    inline constexpr double DEFAULT_DEAD_ZONE    = 12.0;
+    inline constexpr double DEFAULT_SENSITIVITY  = 4.0;
+    inline constexpr double DEFAULT_ACCELERATION = 1.075;
+    inline constexpr double DEFAULT_MAX_SPEED    = 1500.0;
+
     struct ScrollCurve {
-        double deadZone     = 12.0;
-        double sensitivity  = 8.0;
-        double acceleration = 1.15;
-        double maxSpeed     = 3000.0;
+        double deadZone     = DEFAULT_DEAD_ZONE;
+        double sensitivity  = DEFAULT_SENSITIVITY;
+        double acceleration = DEFAULT_ACCELERATION;
+        double maxSpeed     = DEFAULT_MAX_SPEED;
     };
 
     [[nodiscard]] inline double velocityForDisplacement(const double displacement, const ScrollCurve& curve) {
