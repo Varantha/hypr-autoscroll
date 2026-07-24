@@ -15,6 +15,8 @@ daemon.
 > with `hyprpm` so the plugin is built against your Hyprland version. Do not
 > copy a prebuilt `.so` from another system.
 
+Buy me a coffee. https://donate.stripe.com/aFa6oIgw87pIbtk7FVe3e03
+
 ## Features
 
 - Smooth vertical and horizontal autoscrolling
