@@ -47,13 +47,13 @@ Omarchy users can install the plugin, configure startup loading, and register
 a shortcut with one command:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/estebanhiramramirezgomez/hypr-autoscroll/main/scripts/setup-omarchy.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/estebanhiram/hypr-autoscroll/main/scripts/setup-omarchy.sh)
 ```
 
 The default shortcut is `SUPER + A`. Choose another combination during setup:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/estebanhiramramirezgomez/hypr-autoscroll/main/scripts/setup-omarchy.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/estebanhiram/hypr-autoscroll/main/scripts/setup-omarchy.sh) \
   --shortcut "SUPER + ALT + A"
 ```
 
@@ -65,14 +65,14 @@ or unmanaged configuration, and can be safely run again. Review
 To remove the managed configuration and plugin:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/estebanhiramramirezgomez/hypr-autoscroll/main/scripts/setup-omarchy.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/estebanhiram/hypr-autoscroll/main/scripts/setup-omarchy.sh) \
   --uninstall
 ```
 
 ### Manual hyprpm setup
 
 ```bash
-hyprpm add https://github.com/estebanhiramramirezgomez/hypr-autoscroll
+hyprpm add https://github.com/estebanhiram/hypr-autoscroll
 hyprpm enable hypr-autoscroll
 hyprpm reload
 ```
@@ -101,7 +101,7 @@ On Arch Linux and Omarchy:
 
 ```bash
 sudo pacman -S --needed base-devel git hyprland
-git clone https://github.com/estebanhiramramirezgomez/hypr-autoscroll \
+git clone https://github.com/estebanhiram/hypr-autoscroll \
   "$HOME/.local/src/hypr-autoscroll"
 make -C "$HOME/.local/src/hypr-autoscroll" clean all test
 hyprctl plugin load \
@@ -354,7 +354,7 @@ retry:
 
 ```bash
 hyprpm update
-hyprpm add https://github.com/estebanhiramramirezgomez/hypr-autoscroll
+hyprpm add https://github.com/estebanhiram/hypr-autoscroll
 ```
 
 If `hyprpm update` fails or the error remains, use the manual installation
