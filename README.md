@@ -30,8 +30,8 @@ daemon.
 ## Requirements
 
 - Hyprland with plugin support
-- `hyprpm`
-- A compiler and Hyprland headers when building manually
+- `hyprpm` for the recommended managed installation
+- A C++23 compiler, Make, and Hyprland headers for manual installation
 
 Hyprland 0.55.2 and 0.56.0 are currently verified. Other releases may require
 a matching plugin revision because Hyprland does not guarantee plugin ABI
@@ -58,6 +58,44 @@ For legacy configuration:
 
 ```ini
 exec-once = hyprpm reload
+```
+
+## Manual installation
+
+Use this method if `hyprpm` cannot update its cached Hyprland headers. It builds
+the plugin against the headers installed by your distribution.
+
+On Arch Linux and Omarchy:
+
+```bash
+sudo pacman -S --needed base-devel git hyprland
+git clone https://github.com/estebanhiramramirezgomez/hypr-autoscroll \
+  "$HOME/.local/src/hypr-autoscroll"
+make -C "$HOME/.local/src/hypr-autoscroll" clean all test
+hyprctl plugin load \
+  "$HOME/.local/src/hypr-autoscroll/build/hypr-autoscroll.so"
+```
+
+The path passed to Hyprland must be absolute. To load the plugin automatically
+with a Lua configuration, place this before the plugin settings:
+
+```lua
+hl.plugin.load(
+  os.getenv("HOME") .. "/.local/src/hypr-autoscroll/build/hypr-autoscroll.so"
+)
+```
+
+For a legacy configuration, use your actual absolute path:
+
+```ini
+plugin = /home/your-user/.local/src/hypr-autoscroll/build/hypr-autoscroll.so
+```
+
+After a Hyprland update, rebuild the plugin before loading it again:
+
+```bash
+git -C "$HOME/.local/src/hypr-autoscroll" pull --ff-only
+make -C "$HOME/.local/src/hypr-autoscroll" clean all test
 ```
 
 ## Recommended setup
@@ -254,7 +292,20 @@ ctest --test-dir build-cmake --output-on-failure
 
 ## Troubleshooting
 
-After updating Hyprland, rebuild or update the plugin:
+If `hyprpm add` reports that its headers are outdated, refresh its cache and
+retry:
+
+```bash
+hyprpm update
+hyprpm add https://github.com/estebanhiramramirezgomez/hypr-autoscroll
+```
+
+If `hyprpm update` fails or the error remains, use the manual installation
+method above. `hyprpm purge-cache` is also available, but it removes the cache
+and build state for every `hyprpm` plugin.
+
+After updating Hyprland, rebuild a manual installation or update managed
+plugins:
 
 ```bash
 hyprpm update -f
