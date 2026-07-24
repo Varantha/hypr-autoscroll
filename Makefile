@@ -28,6 +28,7 @@ $(TEST): tests/test_scroll_math.cpp src/scroll_math.hpp | $(BUILD_DIR)
 
 test: $(TEST)
 	./$(TEST)
+	bash tests/test_setup_omarchy.sh
 
 clean:
 	rm -f $(PLUGIN) $(TEST)

@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly REPOSITORY_URL="https://github.com/estebanhiramramirezgomez/hypr-autoscroll"
+readonly PLUGIN_NAME="hypr-autoscroll"
+readonly CONFIG_ROOT="${HOME}/.config/hypr"
+readonly MAIN_CONFIG="${CONFIG_ROOT}/hyprland.lua"
+readonly MODULE_CONFIG="${CONFIG_ROOT}/autoscroll.lua"
+readonly REQUIRE_LINE='require("hypr.autoscroll")'
+
+shortcut="SUPER + A"
+uninstall=false
+temporary_file=""
+
+cleanup() {
+    if [[ -n "$temporary_file" && -e "$temporary_file" ]]; then
+        rm -f -- "$temporary_file"
+    fi
+}
+
+trap cleanup EXIT
+
+usage() {
+    cat <<'EOF'
+Usage:
+  setup-omarchy.sh [--shortcut "SUPER + A"]
+  setup-omarchy.sh --uninstall
+
+Installs and configures hypr-autoscroll for Omarchy. Running the setup again
+updates the managed configuration without duplicating it.
+EOF
+}
+
+fail() {
+    printf 'hypr-autoscroll setup: %s\n' "$*" >&2
+    exit 1
+}
+
+while (($# > 0)); do
+    case "$1" in
+        --shortcut)
+            (($# >= 2)) || fail "--shortcut requires a key combination"
+            shortcut="$2"
+            shift 2
+            ;;
+        --uninstall)
+            uninstall=true
+            shift
+            ;;
+        --help | -h)
+            usage
+            exit 0
+            ;;
+        *)
+            fail "unknown option: $1"
+            ;;
+    esac
+done
+
+[[ -f "$MAIN_CONFIG" ]] || fail "Omarchy Lua configuration not found at ${MAIN_CONFIG}"
+grep -Fq 'require("default.hypr.omarchy")' "$MAIN_CONFIG" ||
+    fail "${MAIN_CONFIG} does not look like an Omarchy Lua configuration"
+
+for command in hyprpm hyprctl omarchy; do
+    command -v "$command" >/dev/null 2>&1 || fail "required command not found: ${command}"
+done
+
+timestamp="$(date +%Y%m%d%H%M%S)-$$"
+
+backup_file() {
+    local source_file="$1"
+    local backup_file="${source_file}.bak.hypr-autoscroll-${timestamp}"
+
+    cp -- "$source_file" "$backup_file"
+    printf 'Backed up %s to %s\n' "$source_file" "$backup_file"
+}
+
+remove_require_line() {
+    grep -Fxq "$REQUIRE_LINE" "$MAIN_CONFIG" || return
+
+    backup_file "$MAIN_CONFIG"
+    temporary_file="$(mktemp)"
+    awk -v line="$REQUIRE_LINE" '$0 != line' "$MAIN_CONFIG" >"$temporary_file"
+    install -m 0644 "$temporary_file" "$MAIN_CONFIG"
+    rm -f -- "$temporary_file"
+    temporary_file=""
+}
+
+validate_hyprland() {
+    hyprctl reload >/dev/null
+
+    local errors
+    errors="$(hyprctl configerrors)"
+    if [[ -n "${errors//[[:space:]]/}" ]]; then
+        printf '%s\n' "$errors" >&2
+        fail "Hyprland reported configuration errors"
+    fi
+}
+
+repository_is_installed() {
+    local list_output="$1"
+    grep -Fq "Repository ${PLUGIN_NAME}" <<<"$list_output"
+}
+
+plugin_is_enabled() {
+    local list_output="$1"
+    awk -v name="$PLUGIN_NAME" '
+        /Repository / {
+            in_repository = index($0, "Repository " name " ") > 0
+        }
+        in_repository && /enabled:/ && /true/ {
+            found = 1
+        }
+        END {
+            exit !found
+        }
+    ' <<<"$list_output"
+}
+
+if [[ "$uninstall" == true ]]; then
+    remove_require_line
+
+    if [[ -f "$MODULE_CONFIG" ]]; then
+        grep -Fq "Managed by hypr-autoscroll" "$MODULE_CONFIG" ||
+            fail "refusing to remove unmanaged file: ${MODULE_CONFIG}"
+        backup_file "$MODULE_CONFIG"
+        rm -- "$MODULE_CONFIG"
+    fi
+
+    list_output="$(hyprpm list 2>/dev/null || true)"
+    if repository_is_installed "$list_output"; then
+        if plugin_is_enabled "$list_output"; then
+            hyprpm disable "$PLUGIN_NAME"
+        fi
+        hyprpm remove "$PLUGIN_NAME"
+        hyprpm reload
+    fi
+
+    validate_hyprland
+    printf 'hypr-autoscroll was removed from Omarchy.\n'
+    exit 0
+fi
+
+[[ "$shortcut" != *$'\n'* && "$shortcut" != *$'\r'* ]] ||
+    fail "shortcut must be a single line"
+[[ "$shortcut" != *'"'* && "$shortcut" != *$'\\'* ]] ||
+    fail 'shortcut cannot contain quotes or backslashes'
+[[ "$shortcut" =~ ^[[:alnum:]_:+\ -]+$ ]] ||
+    fail "shortcut contains unsupported characters"
+
+if [[ -e "$MODULE_CONFIG" ]] &&
+    ! grep -Fq "Managed by hypr-autoscroll" "$MODULE_CONFIG"; then
+    fail "refusing to overwrite unmanaged file: ${MODULE_CONFIG}"
+fi
+
+existing_shortcut=""
+if [[ -f "$MODULE_CONFIG" ]]; then
+    existing_shortcut="$(awk -F'"' '/^local autoscroll_shortcut = / { print $2; exit }' "$MODULE_CONFIG")"
+fi
+
+if [[ "$shortcut" != "$existing_shortcut" ]] &&
+    omarchy menu keybindings --print |
+        awk -F ' → ' -v shortcut="$shortcut" '
+            {
+                key = $1
+                sub(/[[:space:]]+$/, "", key)
+                if (key == shortcut)
+                    found = 1
+            }
+            END { exit !found }
+        '; then
+    fail "${shortcut} is already bound; choose another combination with --shortcut"
+fi
+
+for candidate in "${CONFIG_ROOT}"/*.lua; do
+    [[ -e "$candidate" && "$candidate" != "$MODULE_CONFIG" ]] || continue
+    if grep -Eq 'hypr_autoscroll|middle_mode' "$candidate"; then
+        fail "existing autoscroll configuration found in ${candidate}; remove it before using automated setup"
+    fi
+done
+
+list_output="$(hyprpm list 2>/dev/null || true)"
+if ! repository_is_installed "$list_output"; then
+    if ! hyprpm add "$REPOSITORY_URL"; then
+        fail "hyprpm could not install the plugin; run 'hyprpm update' and retry"
+    fi
+    hyprpm enable "$PLUGIN_NAME"
+elif ! plugin_is_enabled "$list_output"; then
+    hyprpm enable "$PLUGIN_NAME"
+fi
+
+if [[ -f "$MODULE_CONFIG" ]]; then
+    backup_file "$MODULE_CONFIG"
+fi
+
+temporary_file="$(mktemp)"
+cat >"$temporary_file" <<EOF
+-- Managed by hypr-autoscroll's Omarchy setup script.
+-- Run the setup again with --shortcut to change this value.
+local autoscroll_shortcut = "${shortcut}"
+
+hl.config({
+  plugin = {
+    hypr_autoscroll = {
+      direct_activation = false,
+    },
+  },
+})
+
+o.bind(autoscroll_shortcut, "Toggle middle-button autoscroll", function()
+  if hl.plugin.hypr_autoscroll then
+    hl.plugin.hypr_autoscroll.middle_mode("toggle")
+  end
+end)
+
+hl.on("hyprland.start", function()
+  hl.exec_cmd("hyprpm reload")
+end)
+EOF
+install -m 0644 "$temporary_file" "$MODULE_CONFIG"
+rm -f -- "$temporary_file"
+temporary_file=""
+
+if ! grep -Fxq "$REQUIRE_LINE" "$MAIN_CONFIG"; then
+    backup_file "$MAIN_CONFIG"
+    printf '\n%s\n' "$REQUIRE_LINE" >>"$MAIN_CONFIG"
+fi
+
+hyprpm reload
+validate_hyprland
+
+printf 'hypr-autoscroll is ready. Toggle shortcut: %s\n' "$shortcut"
