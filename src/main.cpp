@@ -16,12 +16,19 @@
 #include <hyprland/src/devices/IPointer.hpp>
 #include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/helpers/time/Time.hpp>
-#include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
-#include <hyprland/src/managers/cursor/CursorShapeOverrideController.hpp>
 #include <hyprland/src/managers/eventLoop/EventLoopManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+
+#if __has_include(<hyprland/src/pointer/PointerManager.hpp>)
+#define HYPR_AUTOSCROLL_NAMESPACED_POINTER_API 1
+#include <hyprland/src/pointer/PointerManager.hpp>
+#include <hyprland/src/pointer/cursor/CursorShapeOverrideController.hpp>
+#else
+#include <hyprland/src/managers/PointerManager.hpp>
+#include <hyprland/src/managers/cursor/CursorShapeOverrideController.hpp>
+#endif
 
 extern "C" {
 #include <lauxlib.h>
@@ -70,6 +77,30 @@ namespace {
         return static_cast<uint32_t>(Time::millis(Time::steadyNow()));
     }
 
+    Vector2D pointerPosition() {
+#ifdef HYPR_AUTOSCROLL_NAMESPACED_POINTER_API
+        return Pointer::mgr()->position();
+#else
+        return g_pPointerManager->position();
+#endif
+    }
+
+    void setAutoscrollCursor() {
+#ifdef HYPR_AUTOSCROLL_NAMESPACED_POINTER_API
+        Pointer::Cursor::overrideController->setOverride("all-scroll", Pointer::Cursor::CURSOR_OVERRIDE_SPECIAL_ACTION);
+#else
+        Cursor::overrideController->setOverride("all-scroll", Cursor::CURSOR_OVERRIDE_SPECIAL_ACTION);
+#endif
+    }
+
+    void unsetAutoscrollCursor() {
+#ifdef HYPR_AUTOSCROLL_NAMESPACED_POINTER_API
+        Pointer::Cursor::overrideController->unsetOverride(Pointer::Cursor::CURSOR_OVERRIDE_SPECIAL_ACTION);
+#else
+        Cursor::overrideController->unsetOverride(Cursor::CURSOR_OVERRIDE_SPECIAL_ACTION);
+#endif
+    }
+
     void sendAxisStop(const wl_pointer_axis axis) {
         g_pSeatManager->sendPointerAxis(eventTimeMs(), axis, 0.0, 0, 0, WL_POINTER_AXIS_SOURCE_CONTINUOUS,
                                         WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL);
@@ -102,7 +133,7 @@ namespace {
         state.active = false;
         state.target.reset();
         state.timer->updateTimeout(std::nullopt);
-        Cursor::overrideController->unsetOverride(Cursor::CURSOR_OVERRIDE_SPECIAL_ACTION);
+        unsetAutoscrollCursor();
 
         if (restorePointerFocus)
             g_pInputManager->simulateMouseMovement();
@@ -119,13 +150,13 @@ namespace {
             return false;
 
         state.active         = true;
-        state.anchor         = g_pPointerManager->position();
+        state.anchor         = pointerPosition();
         state.target         = target;
         state.lastTick       = Time::steadyNow();
         state.sentHorizontal = false;
         state.sentVertical   = false;
 
-        Cursor::overrideController->setOverride("all-scroll", Cursor::CURSOR_OVERRIDE_SPECIAL_ACTION);
+        setAutoscrollCursor();
         state.timer->updateTimeout(std::chrono::milliseconds(config.frameIntervalMs->value()));
 
         return true;
@@ -168,7 +199,7 @@ namespace {
         const double elapsed = std::clamp(std::chrono::duration<double>(now - state.lastTick).count(), 0.0, 0.05);
         state.lastTick       = now;
 
-        const Vector2D displacement = g_pPointerManager->position() - state.anchor;
+        const Vector2D displacement = pointerPosition() - state.anchor;
         const auto     curve        = currentCurve();
         const double   horizontalDelta =
             config.horizontal->value() ? Autoscroll::deltaForFrame(displacement.x, elapsed, curve) : 0.0;

@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: pacman -Syu --noconfirm --needed base-devel hyprland
       - name: Build

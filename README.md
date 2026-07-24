@@ -33,8 +33,9 @@ daemon.
 - `hyprpm`
 - A compiler and Hyprland headers when building manually
 
-Hyprland 0.55.2 is currently verified. Other releases may require a matching
-plugin revision because Hyprland does not guarantee plugin ABI compatibility.
+Hyprland 0.55.2 and 0.56.0 are currently verified. Other releases may require
+a matching plugin revision because Hyprland does not guarantee plugin ABI
+compatibility.
 
 ## Install with hyprpm
 
