@@ -100,10 +100,15 @@ make -C "$HOME/.local/src/hypr-autoscroll" clean all test
 
 ## Recommended setup
 
-The recommended setup keeps the middle button normal by default. `SUPER + A`
-toggles whether middle-click activates autoscroll:
+Installing the plugin does not create a shortcut automatically. The shortcut
+is a normal Hyprland binding, so you can use any free key combination.
+
+The recommended setup keeps the middle button normal by default. Change
+`autoscroll_shortcut` below to choose the toggle shortcut:
 
 ```lua
+local autoscroll_shortcut = "SUPER + A"
+
 hl.config({
   plugin = {
     hypr_autoscroll = {
@@ -112,7 +117,7 @@ hl.config({
   },
 })
 
-hl.bind("SUPER + A", function()
+hl.bind(autoscroll_shortcut, function()
   if hl.plugin.hypr_autoscroll then
     hl.plugin.hypr_autoscroll.middle_mode("toggle")
   end
@@ -133,15 +138,35 @@ Hyprland displays a notification when the middle-button mode changes.
 
 ### Omarchy
 
-Put the `hl.config` block in `~/.config/hypr/hyprland.lua` and the `hl.bind`
-block in `~/.config/hypr/bindings.lua`. Keep customizations under
-`~/.config/hypr/`; files under `~/.local/share/omarchy/` are managed by
-Omarchy.
+Put the `hl.config` block in `~/.config/hypr/hyprland.lua`. Put this
+Omarchy-native binding in `~/.config/hypr/bindings.lua`:
+
+```lua
+local autoscroll_shortcut = "SUPER + A" -- Change this to any free combination.
+
+o.bind(autoscroll_shortcut, "Toggle middle-button autoscroll", function()
+  if hl.plugin.hypr_autoscroll then
+    hl.plugin.hypr_autoscroll.middle_mode("toggle")
+  end
+end)
+```
+
+The description makes the shortcut appear in Omarchy's keybindings menu. Keep
+customizations under `~/.config/hypr/`; files under
+`~/.local/share/omarchy/` are managed by Omarchy.
+
+### Legacy Hyprland configuration
+
+Choose the modifiers and key in the `bindd` line:
+
+```ini
+bindd = SUPER, A, Toggle middle-button autoscroll, hypr-autoscroll:middle-mode, toggle
+```
 
 ## Uninstall
 
-First remove the `hypr_autoscroll` configuration and `SUPER + A` binding that
-you added during setup.
+First remove the `hypr_autoscroll` configuration and shortcut binding that you
+added during setup.
 
 If installed with `hyprpm`:
 
