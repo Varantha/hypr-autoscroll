@@ -1,3 +1,4 @@
+#include "../src/button_state.hpp"
 #include "../src/scroll_math.hpp"
 
 #include <cassert>
@@ -13,6 +14,26 @@ namespace {
 } // namespace
 
 int main() {
+    const auto unrelatedButton = Autoscroll::decideSwallowedButtonEvent(false, false, false, false);
+    assert(!unrelatedButton.cancelEvent);
+    assert(!unrelatedButton.clearButton);
+
+    const auto pendingRelease = Autoscroll::decideSwallowedButtonEvent(true, false, false, true);
+    assert(pendingRelease.cancelEvent);
+    assert(pendingRelease.clearButton);
+
+    const auto stalePressWhileDisabled = Autoscroll::decideSwallowedButtonEvent(true, false, false, false);
+    assert(!stalePressWhileDisabled.cancelEvent);
+    assert(stalePressWhileDisabled.clearButton);
+
+    const auto pendingPressWhileEnabled = Autoscroll::decideSwallowedButtonEvent(true, true, false, false);
+    assert(pendingPressWhileEnabled.cancelEvent);
+    assert(!pendingPressWhileEnabled.clearButton);
+
+    const auto pendingPressWhileActive = Autoscroll::decideSwallowedButtonEvent(true, false, true, false);
+    assert(pendingPressWhileActive.cancelEvent);
+    assert(!pendingPressWhileActive.clearButton);
+
     const Autoscroll::ScrollCurve defaults;
     assert(near(defaults.sensitivity, 4.0));
     assert(near(defaults.acceleration, 1.075));
@@ -44,6 +65,6 @@ int main() {
     assert(near(Autoscroll::velocityForDisplacement(5.0, accelerated), 25.0));
     assert(near(Autoscroll::velocityForDisplacement(-5.0, accelerated), -25.0));
 
-    std::cout << "scroll math tests passed\n";
+    std::cout << "button state and scroll math tests passed\n";
     return 0;
 }

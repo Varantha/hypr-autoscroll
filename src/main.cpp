@@ -1,3 +1,4 @@
+#include "button_state.hpp"
 #include "scroll_math.hpp"
 
 #include <algorithm>
@@ -364,11 +365,15 @@ namespace {
             [](IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
                 const auto activationButton = static_cast<uint32_t>(config.button->value());
 
-                if (state.swallowedButton && event.button == *state.swallowedButton) {
+                const auto swallowedButtonDecision = Autoscroll::decideSwallowedButtonEvent(
+                    state.swallowedButton && event.button == *state.swallowedButton, state.middleModeEnabled,
+                    state.active, event.state == WL_POINTER_BUTTON_STATE_RELEASED);
+
+                if (swallowedButtonDecision.clearButton)
+                    state.swallowedButton.reset();
+
+                if (swallowedButtonDecision.cancelEvent) {
                     info.cancelled = true;
-                    if (event.state == WL_POINTER_BUTTON_STATE_RELEASED) {
-                        state.swallowedButton.reset();
-                    }
                     return;
                 }
 
@@ -478,7 +483,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     registerListeners();
     HyprlandAPI::reloadConfig();
 
-    return {PLUGIN_NAME, "Windows-style middle-click autoscrolling", "hypr-autoscroll contributors", "0.1.1"};
+    return {PLUGIN_NAME, "Windows-style middle-click autoscrolling", "hypr-autoscroll contributors", "0.1.2"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
