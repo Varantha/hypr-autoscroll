@@ -269,6 +269,33 @@ plugin {
 bind = SUPER, A, hypr-autoscroll:middle-mode, toggle
 ```
 
+## Window rules
+
+Exclude specific windows from middle-button autoscroll with the
+`hypr_autoscroll:no_autoscroll` window rule. The middle click then passes
+through to the application untouched, which keeps native behavior such as
+opening a link in a new browser tab.
+
+```ini
+windowrule {
+    name = firefox-native-middle-click
+    match:class = ^(firefox|org.mozilla.firefox)$
+    hypr_autoscroll:no_autoscroll = true
+}
+```
+
+A `= true` or `= 1` value enables the rule; a later `= false` rule for the same
+window overrides it. The value is read live on each activation press, so
+`hyprctl reload` and dynamic rule changes take effect immediately.
+
+A keybind that calls the `toggle` dispatcher still forces autoscroll inside an
+ignored window, so you can scroll on demand where the rule normally suppresses
+it:
+
+```ini
+bind = SUPER, A, hypr-autoscroll:toggle, on
+```
+
 ## Commands
 
 ### Middle-button mode
