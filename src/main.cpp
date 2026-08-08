@@ -14,8 +14,12 @@
 #include <hyprland/src/config/values/types/BoolValue.hpp>
 #include <hyprland/src/config/values/types/FloatValue.hpp>
 #include <hyprland/src/config/values/types/IntValue.hpp>
+#include <hyprland/src/desktop/rule/windowRule/WindowRuleEffectContainer.hpp>
+#include <hyprland/src/desktop/state/ViewState.hpp>
+#include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/devices/IPointer.hpp>
 #include <hyprland/src/event/EventBus.hpp>
+#include <hyprland/src/helpers/MiscFunctions.hpp>
 #include <hyprland/src/helpers/time/Time.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/eventLoop/EventLoopManager.hpp>
@@ -55,6 +59,8 @@ namespace {
         SP<Config::Values::CIntValue>   frameIntervalMs;
     } config;
 
+    using WindowRuleEffectIdx = Desktop::Rule::CWindowRuleEffectContainer::storageType;
+
     struct RuntimeState {
         bool                    active                 = false;
         bool                    middleModeEnabled      = false;
@@ -72,6 +78,8 @@ namespace {
         CHyprSignalListener     axisListener;
         CHyprSignalListener     focusListener;
         CHyprSignalListener     configListener;
+
+        WindowRuleEffectIdx     noAutoscrollRuleIdx = 0;
     } state;
 
     uint32_t eventTimeMs() {
@@ -84,6 +92,19 @@ namespace {
 #else
         return g_pPointerManager->position();
 #endif
+    }
+
+    // Pointer focus can be a subsurface whose window parent is private, so resolve
+    // the window by hit-testing the pointer position.
+    bool pointerTargetIgnored() {
+        const auto window = Desktop::viewState()->hitTest().windowAt(
+            pointerPosition(), Desktop::View::RESERVED_EXTENTS | Desktop::View::INPUT_EXTENTS);
+        if (!window || !window->m_ruleApplicator)
+            return false;
+
+        const auto& props = window->m_ruleApplicator->m_otherProps.props;
+        const auto  it    = props.find(state.noAutoscrollRuleIdx);
+        return it != props.end() && truthy(it->second->effect);
     }
 
     void setAutoscrollCursor() {
@@ -392,7 +413,7 @@ namespace {
                 }
 
                 if (config.enabled->value() && state.middleModeEnabled && event.button == activationButton &&
-                    event.state == WL_POINTER_BUTTON_STATE_PRESSED && activate()) {
+                    event.state == WL_POINTER_BUTTON_STATE_PRESSED && !pointerTargetIgnored() && activate()) {
                     state.swallowedButton = event.button;
                     info.cancelled        = true;
                 }
@@ -481,6 +502,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pEventLoopManager->addTimer(state.timer);
 
     registerListeners();
+
+    state.noAutoscrollRuleIdx = Desktop::Rule::windowEffects()->registerEffect("hypr_autoscroll:no_autoscroll");
+
     HyprlandAPI::reloadConfig();
 
     return {PLUGIN_NAME, "Windows-style middle-click autoscrolling", "hypr-autoscroll contributors", "0.1.2"};
@@ -488,6 +512,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 APICALL EXPORT void PLUGIN_EXIT() {
     deactivate(false);
+
+    Desktop::Rule::windowEffects()->unregisterEffect(state.noAutoscrollRuleIdx);
 
     state.buttonListener.reset();
     state.moveListener.reset();
